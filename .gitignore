@@ -7,3 +7,6 @@ __pycache__/
 site/*.zip
 tools/*
 !tools/e14_build_dashboard_site.py
+
+# Local Netlify folder
+.netlify
