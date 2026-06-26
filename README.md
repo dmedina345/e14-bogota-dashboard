@@ -10,6 +10,10 @@ This dataset currently covers only Bogotá D.C. It does not include other Colomb
 
 The dashboard is in `site/e14-dashboard` and can be hosted as a static site.
 
+Live dashboard:
+
+https://e14-bogota-dashboard.netlify.app
+
 It includes:
 
 - Validation mode filters: strict, candidate distribution, fallback exact, fallback 5%, fallback 10%.
@@ -31,6 +35,14 @@ Then open `http://localhost:5178`.
 `netlify.toml` publishes `site/e14-dashboard`, so the repo can be connected directly to Netlify. It also works as a drag-and-drop static deploy using the contents of `site/e14-dashboard`.
 
 Continuous deployment is configured for the `master` branch.
+
+## OCR Artifact
+
+Labels, current model weights, metrics, and prediction outputs are published as a GitHub Release:
+
+https://github.com/dmedina345/e14-bogota-dashboard/releases/tag/v0.1-bogota-ocr-model
+
+See `docs/DATA_CARD.md` and `docs/MODEL_CARD.md` for scope, metrics, and limitations.
 
 ## Method note
 
