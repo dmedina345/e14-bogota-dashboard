@@ -1,0 +1,12 @@
+[build]
+  publish = "site/e14-dashboard"
+
+[[headers]]
+  for = "/downloads/*.csv"
+  [headers.values]
+    Content-Type = "text/csv; charset=utf-8"
+
+[[headers]]
+  for = "/data/*.json"
+  [headers.values]
+    Content-Type = "application/json; charset=utf-8"

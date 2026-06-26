@@ -1,0 +1,8 @@
+relative_mesa_bucket,rows,strict_valid_rows,strict_fail_rows,strict_fail_rate,candidate_distribution_valid_rows,candidate_distribution_fail_rows,candidate_distribution_fail_rate,ic_votes_candidate_valid,ad_votes_candidate_valid,ic_pct_candidate_valid,ad_pct_candidate_valid
+only_mesa,33,20,13,39.3939,24,9,27.2727,2628,1538,63.0821,36.9179
+00-10% oldest mesas,2198,1418,780,35.4868,1756,442,20.1092,188743,278425,40.4015,59.5985
+10-25% older mesas,2454,1571,883,35.9821,2029,425,17.3187,236479,304373,43.7234,56.2766
+25-50% middle-old,4151,2671,1480,35.6541,3407,744,17.9234,448876,441686,50.4037,49.5963
+50-75% middle-young,3888,2623,1265,32.536,3219,669,17.2068,473389,296378,61.4977,38.5023
+75-90% younger mesas,2300,1531,769,33.4348,1899,401,17.4348,290470,149023,66.0921,33.9079
+90-100% youngest mesas,2126,1372,754,35.4657,1700,426,20.0376,185863,108270,63.1901,36.8099

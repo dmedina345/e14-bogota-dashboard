@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>E14 Bogotá | Distribución por mesa</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">Segunda vuelta presidencial · Bogotá</p>
+      <h1>E14 Bogotá: distribución de votos por mesa</h1>
+      <p class="subtitle">Exploración de IC y AD usando la mesa como proxy ordinal de edad dentro de cada puesto de votación.</p>
+      <p class="scope-note">Alcance actual: solo Bogotá D.C. No incluye otros departamentos ni municipios.</p>
+    </div>
+    <nav class="downloads" aria-label="Descargas">
+      <a href="./downloads/predicciones_fallback_5pct.csv" download>CSV recomendado</a>
+      <a href="./downloads/predicciones_todas.csv" download>CSV completo</a>
+    </nav>
+  </header>
+
+  <main>
+    <section class="panel filters" aria-label="Filtros">
+      <label>
+        Validación
+        <select id="validationMode">
+          <option value="fallback5" selected>Fallback 5% recomendado</option>
+          <option value="fallbackExact">Fallback exacto</option>
+          <option value="fallback10">Fallback 10%</option>
+          <option value="candidate">Distribución candidatos</option>
+          <option value="strict">Estricta</option>
+        </select>
+      </label>
+      <label>
+        Zona
+        <select id="zoneFilter">
+          <option value="all">Todas</option>
+        </select>
+      </label>
+      <label>
+        Puesto
+        <select id="standFilter">
+          <option value="all">Todos</option>
+        </select>
+      </label>
+      <label>
+        Mesa relativa
+        <select id="bucketFilter">
+          <option value="all">Todas</option>
+        </select>
+      </label>
+      <label>
+        Mín. formularios por puesto
+        <input id="minRows" type="number" min="1" step="1" value="1">
+      </label>
+    </section>
+
+    <section class="metrics" aria-label="Resumen">
+      <div class="metric"><span>Formularios usados</span><strong id="metricRows">-</strong></div>
+      <div class="metric"><span>Cobertura</span><strong id="metricCoverage">-</strong></div>
+      <div class="metric"><span>IC</span><strong id="metricIc">-</strong></div>
+      <div class="metric"><span>AD</span><strong id="metricAd">-</strong></div>
+      <div class="metric"><span>Margen IC</span><strong id="metricMargin">-</strong></div>
+    </section>
+
+    <section class="layout">
+      <article class="panel chart-panel">
+        <div class="section-title">
+          <h2>Voto por mesa relativa</h2>
+          <p>El eje ordena cada puesto desde sus mesas más adultas hasta sus mesas más jóvenes.</p>
+        </div>
+        <canvas id="relativeChart" height="130"></canvas>
+      </article>
+
+      <article class="panel chart-panel">
+        <div class="section-title">
+          <h2>Voto por número de mesa</h2>
+          <p>Vista absoluta. Útil, pero mezcla puestos con tamaños distintos.</p>
+        </div>
+        <canvas id="mesaChart" height="130"></canvas>
+      </article>
+    </section>
+
+    <section class="layout map-layout">
+      <article class="panel">
+        <div class="section-title">
+          <h2>Cartograma por zona electoral</h2>
+          <p>No es un mapa geográfico todavía: cada bloque representa una zona electoral. Pasa el cursor o haz clic para filtrar.</p>
+        </div>
+        <div id="zoneCartogram" class="cartogram" aria-label="Cartograma por zona"></div>
+      </article>
+
+      <article class="panel">
+        <div class="section-title">
+          <h2>Resumen de zona seleccionada</h2>
+          <p id="selectedZoneLabel">Todas las zonas</p>
+        </div>
+        <div id="zoneDetails" class="zone-details"></div>
+      </article>
+    </section>
+
+    <section class="panel">
+      <div class="section-title table-head">
+        <div>
+          <h2>Puestos de votación</h2>
+          <p>Ordena por porcentaje, margen, formularios o tasa de uso para priorizar revisión.</p>
+        </div>
+        <input id="tableSearch" type="search" placeholder="Buscar puesto o zona">
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th data-sort="zoneCode">Zona</th>
+              <th data-sort="standName">Puesto</th>
+              <th data-sort="rows">Formularios</th>
+              <th data-sort="icPct">IC %</th>
+              <th data-sort="adPct">AD %</th>
+              <th data-sort="marginIc">Margen IC</th>
+              <th data-sort="maxMesa">Mesas</th>
+            </tr>
+          </thead>
+          <tbody id="standTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel notes">
+      <h2>Cómo leer esto</h2>
+      <p>La mesa funciona como proxy ordinal: dentro de un mismo puesto, números bajos tienden a electores mayores y números altos a electores más jóvenes. Por eso la vista principal usa posición relativa dentro del puesto, no rangos de edad exactos.</p>
+      <p>La validación recomendada es fallback 5% porque preserva la distribución IC/AD cuando el total escrito en el formulario o detectado por OCR tiene pequeñas diferencias.</p>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>

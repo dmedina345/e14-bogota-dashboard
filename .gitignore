@@ -1,0 +1,9 @@
+.venv*/
+tmp/
+data/
+__pycache__/
+*.pyc
+*.log
+site/*.zip
+tools/*
+!tools/e14_build_dashboard_site.py
