@@ -30,6 +30,8 @@ Then open `http://localhost:5178`.
 
 `netlify.toml` publishes `site/e14-dashboard`, so the repo can be connected directly to Netlify. It also works as a drag-and-drop static deploy using the contents of `site/e14-dashboard`.
 
+Continuous deployment is configured for the `master` branch.
+
 ## Method note
 
 Mesa position is used as an ordinal proxy for age within each puesto: lower mesa numbers generally correspond to older voters and higher mesa numbers to younger voters. The dashboard does not claim exact age ranges.
