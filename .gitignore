@@ -1,6 +1,8 @@
 .venv*/
 tmp/
 data/
+!site/e14-dashboard/data/
+!site/e14-dashboard/data/dashboard-data.json
 __pycache__/
 *.pyc
 *.log
