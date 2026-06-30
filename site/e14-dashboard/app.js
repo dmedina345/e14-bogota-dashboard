@@ -1,6 +1,7 @@
 const state = {
   data: null,
   filters: {
+    round: "segunda",
     validationMode: "fallback5",
     zone: "all",
     stand: "all",
@@ -13,36 +14,24 @@ const state = {
 };
 
 const bucketOrder = [
-  "Mesa única",
-  "0-10% mesas más adultas",
+  "Mesa unica",
+  "0-10% mesas mas adultas",
   "10-25% mesas adultas",
   "25-50% intermedio adulto",
   "50-75% intermedio joven",
-  "75-90% mesas jóvenes",
-  "90-100% mesas más jóvenes",
+  "75-90% mesas jovenes",
+  "90-100% mesas mas jovenes",
 ];
-
-const validationFields = {
-  strict: "strictValid",
-  candidate: "candidateValid",
-  fallbackExact: "fallbackExact",
-  fallback5: "fallback5",
-  fallback10: "fallback10",
-};
-
-const validationLabels = {
-  strict: "Validación estricta",
-  candidate: "Distribución candidatos",
-  fallbackExact: "Fallback exacto",
-  fallback5: "Fallback 5%",
-  fallback10: "Fallback 10%",
-};
 
 const fmt = new Intl.NumberFormat("es-CO");
 const pctFmt = new Intl.NumberFormat("es-CO", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 function $(id) {
   return document.getElementById(id);
+}
+
+function currentRound() {
+  return state.data.rounds[state.filters.round];
 }
 
 function pct(value) {
@@ -58,8 +47,9 @@ function summarize(rows) {
     acc.ic += row.ic;
     acc.ad += row.ad;
     acc.candidateVotes += row.candidateVotes;
+    if (row.adPct != null && row.adPct > 35) acc.adOver35Rows += 1;
     return acc;
-  }, { rows: rows.length, ic: 0, ad: 0, candidateVotes: 0 });
+  }, { rows: rows.length, ic: 0, ad: 0, candidateVotes: 0, adOver35Rows: 0 });
   total.icPct = share(total.ic, total.candidateVotes);
   total.adPct = share(total.ad, total.candidateVotes);
   total.marginIc = share(total.ic - total.ad, total.candidateVotes);
@@ -67,8 +57,7 @@ function summarize(rows) {
 }
 
 function validRows() {
-  const field = validationFields[state.filters.validationMode];
-  return state.data.rows.filter((row) => row[field]);
+  return currentRound().rows.filter((row) => row[state.filters.validationMode]);
 }
 
 function filteredRows() {
@@ -102,8 +91,39 @@ function colorForIc(icPct) {
   return `hsl(${hue} ${sat}% ${light}%)`;
 }
 
+function roundLabel() {
+  return currentRound().title;
+}
+
+function updateRoundCopy() {
+  $("roundEyebrow").textContent = `${roundLabel()} presidencial · Bogota`;
+  $("roundScope").textContent = `Alcance actual: solo Bogota D.C. · ${fmt.format(currentRound().allRows)} formularios descargados para ${roundLabel().toLowerCase()}.`;
+  $("downloadRecommended").href = `./downloads/${currentRound().downloads.recommended}`;
+  $("downloadFull").href = `./downloads/${currentRound().downloads.all}`;
+}
+
+function populateRoundFilter() {
+  const order = state.data.metadata.roundOrder || Object.keys(state.data.rounds);
+  $("roundFilter").innerHTML = order
+    .map((key) => `<option value="${key}">${state.data.rounds[key].title}</option>`)
+    .join("");
+  $("roundFilter").value = state.filters.round;
+}
+
+function populateValidationFilter() {
+  const round = currentRound();
+  $("validationMode").innerHTML = Object.entries(round.validationModes)
+    .map(([key, label]) => `<option value="${key}">${label}</option>`)
+    .join("");
+  if (!round.validationModes[state.filters.validationMode]) {
+    state.filters.validationMode = round.recommendedMode;
+  }
+  $("validationMode").value = state.filters.validationMode;
+}
+
 function populateFilters() {
-  const zones = aggregate(state.data.rows, (row) => row.zoneCode, (key, group) => ({
+  const rows = currentRound().rows;
+  const zones = aggregate(rows, (row) => row.zoneCode, (key, group) => ({
     zoneCode: key,
     zoneName: group[0].zoneName,
   })).sort((a, b) => a.zoneCode.localeCompare(b.zoneCode, "es", { numeric: true }));
@@ -111,17 +131,20 @@ function populateFilters() {
   $("zoneFilter").innerHTML = `<option value="all">Todas</option>` + zones
     .map((zone) => `<option value="${zone.zoneCode}">Zona ${zone.zoneCode}</option>`)
     .join("");
+  $("zoneFilter").value = state.filters.zone;
 
   $("bucketFilter").innerHTML = `<option value="all">Todas</option>` + bucketOrder
     .map((bucket) => `<option value="${bucket}">${bucket}</option>`)
     .join("");
+  $("bucketFilter").value = state.filters.bucket;
 
   updateStandFilter();
 }
 
 function updateStandFilter() {
+  const rows = currentRound().rows;
   const stands = aggregate(
-    state.data.rows.filter((row) => state.filters.zone === "all" || row.zoneCode === state.filters.zone),
+    rows.filter((row) => state.filters.zone === "all" || row.zoneCode === state.filters.zone),
     (row) => `${row.zoneCode}|${row.standCode}|${row.standName}`,
     (key, group) => ({
       key,
@@ -138,15 +161,17 @@ function updateStandFilter() {
   $("standFilter").innerHTML = `<option value="all">Todos</option>` + stands
     .map((stand) => `<option value="${stand.key}">${stand.zoneCode}-${stand.standCode} · ${stand.standName}</option>`)
     .join("");
+  $("standFilter").value = state.filters.stand;
 }
 
 function updateMetrics(rows) {
   const summary = summarize(rows);
   $("metricRows").textContent = fmt.format(summary.rows);
-  $("metricCoverage").textContent = pct(share(summary.rows, state.data.metadata.allRows));
+  $("metricCoverage").textContent = pct(share(summary.rows, currentRound().allRows));
   $("metricIc").textContent = pct(summary.icPct);
   $("metricAd").textContent = pct(summary.adPct);
   $("metricMargin").textContent = pct(summary.marginIc);
+  $("metricAdOver35").textContent = fmt.format(summary.adOver35Rows);
 }
 
 function renderChart(id, labels, icData, adData) {
@@ -221,7 +246,7 @@ function renderCartogram(rows) {
     <button class="zone-tile" style="background:${colorForIc(zone.icPct)}" data-zone="${zone.zoneCode}" title="Zona ${zone.zoneCode}: IC ${pct(zone.icPct)}, AD ${pct(zone.adPct)}">
       <span class="zone-code">Zona ${zone.zoneCode}</span>
       <span class="zone-share">IC ${pct(zone.icPct)}</span>
-      <span class="zone-rows">${fmt.format(zone.rows)} forms</span>
+      <span class="zone-rows">${fmt.format(zone.rows)} formularios</span>
     </button>
   `).join("");
 
@@ -239,13 +264,14 @@ function renderCartogram(rows) {
 function updateZoneDetails(rows) {
   const summary = summarize(rows);
   const label = state.filters.zone === "all" ? "Todas las zonas" : `Zona ${state.filters.zone}`;
-  $("selectedZoneLabel").textContent = `${label} · ${validationLabels[state.filters.validationMode]}`;
+  $("selectedZoneLabel").textContent = `${label} · ${currentRound().validationModes[state.filters.validationMode]}`;
   $("zoneDetails").innerHTML = [
     ["Formularios", fmt.format(summary.rows)],
     ["Votos IC", fmt.format(summary.ic)],
     ["Votos AD", fmt.format(summary.ad)],
     ["IC", pct(summary.icPct)],
     ["AD", pct(summary.adPct)],
+    ["Mesas AD > 35% del par", fmt.format(summary.adOver35Rows)],
     ["Margen IC", pct(summary.marginIc)],
   ].map(([labelText, value]) => `<div class="detail-row"><span>${labelText}</span><strong>${value}</strong></div>`).join("");
 }
@@ -285,6 +311,7 @@ function updateTable(rows) {
       <td>${fmt.format(row.rows)}</td>
       <td>${pct(row.icPct)}</td>
       <td>${pct(row.adPct)}</td>
+      <td>${fmt.format(row.adOver35Rows)}</td>
       <td>${pct(row.marginIc)}</td>
       <td>${fmt.format(row.maxMesa)}</td>
     </tr>
@@ -292,6 +319,7 @@ function updateTable(rows) {
 }
 
 function render() {
+  updateRoundCopy();
   const rows = filteredRows();
   updateMetrics(rows);
   updateCharts(rows);
@@ -300,7 +328,21 @@ function render() {
   updateTable(rows);
 }
 
+function changeRound(round) {
+  state.filters.round = round;
+  state.filters.validationMode = currentRound().recommendedMode;
+  state.filters.zone = "all";
+  state.filters.stand = "all";
+  state.filters.bucket = "all";
+  populateValidationFilter();
+  populateFilters();
+  render();
+}
+
 function bindEvents() {
+  $("roundFilter").addEventListener("change", (event) => {
+    changeRound(event.target.value);
+  });
   $("validationMode").addEventListener("change", (event) => {
     state.filters.validationMode = event.target.value;
     render();
@@ -344,6 +386,10 @@ async function init() {
   document.body.classList.add("loading");
   const response = await fetch("./data/dashboard-data.json");
   state.data = await response.json();
+  state.filters.round = state.data.metadata.defaultRound || "segunda";
+  state.filters.validationMode = currentRound().recommendedMode;
+  populateRoundFilter();
+  populateValidationFilter();
   populateFilters();
   bindEvents();
   render();

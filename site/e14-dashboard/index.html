@@ -11,14 +11,14 @@
 <body>
   <header class="topbar">
     <div>
-      <p class="eyebrow">Segunda vuelta presidencial · Bogotá</p>
+      <p id="roundEyebrow" class="eyebrow">Segunda vuelta presidencial · Bogota</p>
       <h1>E14 Bogotá: distribución de votos por mesa</h1>
       <p class="subtitle">Exploración de IC y AD usando la mesa como proxy ordinal de edad dentro de cada puesto de votación.</p>
-      <p class="scope-note">Alcance actual: solo Bogotá D.C. No incluye otros departamentos ni municipios.</p>
+      <p id="roundScope" class="scope-note">Alcance actual: solo Bogota D.C. No incluye otros departamentos ni municipios.</p>
     </div>
     <nav class="downloads" aria-label="Descargas">
-      <a href="./downloads/predicciones_fallback_5pct.csv" download>CSV recomendado</a>
-      <a href="./downloads/predicciones_todas.csv" download>CSV completo</a>
+      <a id="downloadRecommended" href="./downloads/predicciones_fallback_5pct.csv" download>CSV recomendado</a>
+      <a id="downloadFull" href="./downloads/predicciones_todas.csv" download>CSV completo</a>
       <a href="https://github.com/dmedina345/e14-bogota-dashboard" target="_blank" rel="noreferrer">GitHub</a>
       <a href="https://github.com/dmedina345/e14-bogota-dashboard/releases/tag/v0.1-bogota-ocr-model" target="_blank" rel="noreferrer">Datos y modelo</a>
     </nav>
@@ -26,6 +26,13 @@
 
   <main>
     <section class="panel filters" aria-label="Filtros">
+      <label>
+        Vuelta
+        <select id="roundFilter">
+          <option value="segunda">Segunda vuelta</option>
+          <option value="primera">Primera vuelta</option>
+        </select>
+      </label>
       <label>
         Validación
         <select id="validationMode">
@@ -65,6 +72,7 @@
       <div class="metric"><span>Cobertura</span><strong id="metricCoverage">-</strong></div>
       <div class="metric"><span>IC</span><strong id="metricIc">-</strong></div>
       <div class="metric"><span>AD</span><strong id="metricAd">-</strong></div>
+      <div class="metric"><span>Mesas AD > 35% del par</span><strong id="metricAdOver35">-</strong></div>
       <div class="metric"><span>Margen IC</span><strong id="metricMargin">-</strong></div>
     </section>
 
@@ -121,6 +129,7 @@
               <th data-sort="rows">Formularios</th>
               <th data-sort="icPct">IC %</th>
               <th data-sort="adPct">AD %</th>
+              <th data-sort="adOver35Rows">AD > 35% par</th>
               <th data-sort="marginIc">Margen IC</th>
               <th data-sort="maxMesa">Mesas</th>
             </tr>
@@ -133,7 +142,8 @@
     <section class="panel notes">
       <h2>Cómo leer esto</h2>
       <p>La mesa funciona como proxy ordinal: dentro de un mismo puesto, números bajos tienden a electores mayores y números altos a electores más jóvenes. Por eso la vista principal usa posición relativa dentro del puesto, no rangos de edad exactos.</p>
-      <p>La validación recomendada es fallback 5% porque preserva la distribución IC/AD cuando el total escrito en el formulario o detectado por OCR tiene pequeñas diferencias.</p>
+      <p>En primera vuelta se extraen solo Iván Cepeda (candidato 1) y Abelardo de la Espriella (candidato 4). En segunda vuelta se usan los dos candidatos del formulario.</p>
+      <p>La validación recomendada de segunda vuelta es fallback 5%; en primera vuelta es la validación de plausibilidad del par IC/AD contra los totales del formulario.</p>
     </section>
   </main>
 

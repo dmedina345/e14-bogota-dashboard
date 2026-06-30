@@ -9,6 +9,7 @@ __pycache__/
 site/*.zip
 tools/*
 !tools/e14_build_dashboard_site.py
+!tools/e14_predict_first_round_candidates.py
 
 # Local Netlify folder
 .netlify
