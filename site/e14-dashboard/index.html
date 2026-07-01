@@ -115,14 +115,22 @@
     <section class="panel">
       <div class="section-title table-head">
         <div>
-          <h2>Puestos de votación</h2>
+          <h2 id="tableTitle">Puestos de votación</h2>
           <p>Ordena por porcentaje, margen, formularios o tasa de uso para priorizar revisión.</p>
+          <p id="tableCount" class="table-count">-</p>
         </div>
-        <input id="tableSearch" type="search" placeholder="Buscar puesto o zona">
+        <div class="table-actions">
+          <label class="inline-check">
+            <input id="tableAdOver35Only" type="checkbox">
+            Solo mesas AD &gt; 35%
+          </label>
+          <input id="tableSearch" type="search" placeholder="Buscar puesto, zona o mesa">
+          <button id="downloadTableCsv" type="button">Descargar tabla</button>
+        </div>
       </div>
       <div class="table-wrap">
-        <table>
-          <thead>
+        <table id="resultsTable">
+          <thead id="tableHead">
             <tr>
               <th data-sort="zoneCode">Zona</th>
               <th data-sort="standName">Puesto</th>

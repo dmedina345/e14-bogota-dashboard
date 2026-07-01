@@ -243,8 +243,47 @@ input {
   gap: 16px;
 }
 
-.table-head input {
+.table-count {
+  margin-bottom: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.table-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.inline-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.inline-check input {
+  width: auto;
+  min-height: auto;
+}
+
+.table-head input[type="search"] {
   max-width: 320px;
+}
+
+button {
+  min-height: 38px;
+  border: 1px solid var(--text);
+  border-radius: 6px;
+  padding: 8px 12px;
+  background: var(--text);
+  color: #ffffff;
+  font: inherit;
+  cursor: pointer;
 }
 
 .table-wrap {
@@ -280,7 +319,9 @@ th {
 th:first-child,
 td:first-child,
 th:nth-child(2),
-td:nth-child(2) {
+td:nth-child(2),
+th:nth-child(3),
+td:nth-child(3) {
   text-align: left;
 }
 

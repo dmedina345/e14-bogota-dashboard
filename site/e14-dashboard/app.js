@@ -8,6 +8,7 @@ const state = {
     bucket: "all",
     minRows: 1,
     search: "",
+    tableAdOver35Only: false,
   },
   sort: { key: "rows", direction: "desc" },
   charts: {},
@@ -40,6 +41,12 @@ function pct(value) {
 
 function share(numerator, denominator) {
   return denominator ? (numerator / denominator) * 100 : null;
+}
+
+function formatCell(value, type = "text") {
+  if (type === "pct") return pct(value);
+  if (type === "number") return fmt.format(value || 0);
+  return value == null ? "" : String(value);
 }
 
 function summarize(rows) {
@@ -302,20 +309,106 @@ function standRows(rows) {
   return searched;
 }
 
+function mesaRows(rows) {
+  const searched = rows.filter((row) => {
+    if (row.adPct == null || row.adPct <= 35) return false;
+    if (!state.filters.search) return true;
+    const haystack = `${row.zoneCode} ${row.standCode} ${row.standName} ${row.mesa}`.toLocaleLowerCase("es");
+    return haystack.includes(state.filters.search.toLocaleLowerCase("es"));
+  });
+
+  searched.sort((a, b) => {
+    const av = a[state.sort.key];
+    const bv = b[state.sort.key];
+    const direction = state.sort.direction === "asc" ? 1 : -1;
+    if (typeof av === "number" && typeof bv === "number") return (av - bv) * direction;
+    return String(av).localeCompare(String(bv), "es", { numeric: true }) * direction;
+  });
+
+  return searched;
+}
+
+function currentTable(rows) {
+  if (state.filters.tableAdOver35Only) {
+    return {
+      title: "Mesas con AD > 35% del par IC+AD",
+      columns: [
+        { key: "zoneCode", label: "Zona" },
+        { key: "standCode", label: "Puesto" },
+        { key: "standName", label: "Nombre puesto" },
+        { key: "mesa", label: "Mesa", type: "number" },
+        { key: "relativeBucket", label: "Mesa relativa" },
+        { key: "ic", label: "Votos IC", type: "number" },
+        { key: "ad", label: "Votos AD", type: "number" },
+        { key: "candidateVotes", label: "IC+AD", type: "number" },
+        { key: "icPct", label: "IC %", type: "pct" },
+        { key: "adPct", label: "AD %", type: "pct" },
+        { key: "pdf", label: "PDF" },
+      ],
+      rows: mesaRows(rows),
+    };
+  }
+
+  return {
+    title: "Puestos de votacion",
+    columns: [
+      { key: "zoneStand", label: "Zona", sortKey: "zoneCode" },
+      { key: "standName", label: "Puesto" },
+      { key: "rows", label: "Formularios", type: "number" },
+      { key: "icPct", label: "IC %", type: "pct" },
+      { key: "adPct", label: "AD %", type: "pct" },
+      { key: "adOver35Rows", label: "AD > 35% par", type: "number" },
+      { key: "marginIc", label: "Margen IC", type: "pct" },
+      { key: "maxMesa", label: "Mesas", type: "number" },
+    ],
+    rows: standRows(rows).map((row) => ({
+      ...row,
+      zoneStand: `${row.zoneCode}-${row.standCode}`,
+    })),
+  };
+}
+
 function updateTable(rows) {
-  const tableRows = standRows(rows).slice(0, 300);
-  $("standTable").innerHTML = tableRows.map((row) => `
+  const table = currentTable(rows);
+  const visibleRows = table.rows.slice(0, 300);
+  $("tableTitle").textContent = table.title;
+  $("tableCount").textContent = `${fmt.format(table.rows.length)} filas; se muestran ${fmt.format(visibleRows.length)}`;
+  $("tableHead").innerHTML = `
     <tr>
-      <td>${row.zoneCode}-${row.standCode}</td>
-      <td>${row.standName}</td>
-      <td>${fmt.format(row.rows)}</td>
-      <td>${pct(row.icPct)}</td>
-      <td>${pct(row.adPct)}</td>
-      <td>${fmt.format(row.adOver35Rows)}</td>
-      <td>${pct(row.marginIc)}</td>
-      <td>${fmt.format(row.maxMesa)}</td>
+      ${table.columns.map((column) => `<th data-sort="${column.sortKey || column.key}">${column.label}</th>`).join("")}
+    </tr>
+  `;
+  $("standTable").innerHTML = visibleRows.map((row) => `
+    <tr>
+      ${table.columns.map((column) => `<td>${formatCell(row[column.key], column.type)}</td>`).join("")}
     </tr>
   `).join("");
+}
+
+function csvEscape(value) {
+  const text = value == null ? "" : String(value);
+  return /[",\n\r]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
+}
+
+function downloadCurrentTable() {
+  const table = currentTable(filteredRows());
+  const csv = [
+    table.columns.map((column) => csvEscape(column.label)).join(","),
+    ...table.rows.map((row) => table.columns.map((column) => {
+      const value = column.type === "pct" ? row[column.key] : row[column.key];
+      return csvEscape(value);
+    }).join(",")),
+  ].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const mode = state.filters.tableAdOver35Only ? "mesas_ad_mayor_35" : "puestos";
+  link.href = url;
+  link.download = `e14_${state.filters.round}_${mode}_${state.filters.validationMode}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function render() {
@@ -369,16 +462,22 @@ function bindEvents() {
     state.filters.search = event.target.value;
     render();
   });
-  document.querySelectorAll("th[data-sort]").forEach((header) => {
-    header.addEventListener("click", () => {
-      const key = header.dataset.sort;
-      if (state.sort.key === key) {
-        state.sort.direction = state.sort.direction === "asc" ? "desc" : "asc";
-      } else {
-        state.sort = { key, direction: "desc" };
-      }
-      render();
-    });
+  $("tableAdOver35Only").addEventListener("change", (event) => {
+    state.filters.tableAdOver35Only = event.target.checked;
+    state.sort = event.target.checked ? { key: "adPct", direction: "desc" } : { key: "rows", direction: "desc" };
+    render();
+  });
+  $("downloadTableCsv").addEventListener("click", downloadCurrentTable);
+  $("resultsTable").addEventListener("click", (event) => {
+    const header = event.target.closest("th[data-sort]");
+    if (!header) return;
+    const key = header.dataset.sort;
+    if (state.sort.key === key) {
+      state.sort.direction = state.sort.direction === "asc" ? "desc" : "asc";
+    } else {
+      state.sort = { key, direction: "desc" };
+    }
+    render();
   });
 }
 
